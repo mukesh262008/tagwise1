@@ -165,6 +165,10 @@ export default function Parts() {
             setEditingPart(null)
             setRefresh((current) => current + 1)
           }}
+          onDeleted={() => {
+            setEditingPart(null)
+            setRefresh((current) => current + 1)
+          }}
         />
       )}
     </>

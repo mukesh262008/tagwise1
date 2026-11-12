@@ -248,6 +248,7 @@ export default function PartDetail() {
             setPart(saved)
             setEditing(false)
           }}
+          onDeleted={() => navigate('/parts')}
         />
       )}
     </>

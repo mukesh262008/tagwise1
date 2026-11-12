@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api'
+import { useAuth } from '../auth'
 import { Button, ErrorBox, Field, Input, Modal, Select, Textarea } from '../ui'
 
-export default function PartForm({ part, onSaved, onClose }) {
+export default function PartForm({ part, onSaved, onDeleted, onClose }) {
+  const { isAdmin } = useAuth()
   const editing = !!part
   const [f, setF] = useState({
     part_number: part?.part_number ?? '',
@@ -17,6 +19,7 @@ export default function PartForm({ part, onSaved, onClose }) {
   const [categories, setCategories] = useState([])
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     api('/parts/categories').then(setCategories).catch(() => {})
@@ -41,6 +44,19 @@ export default function PartForm({ part, onSaved, onClose }) {
     } catch (err) {
       setError(err.message)
       setBusy(false)
+    }
+  }
+
+  async function remove() {
+    if (!window.confirm(`Delete ${part.part_number}? This also removes its fitments and links.`)) return
+    setDeleting(true)
+    setError('')
+    try {
+      await api(`/parts/${part.id}`, { method: 'DELETE' })
+      onDeleted()
+    } catch (err) {
+      setError(err.message)
+      setDeleting(false)
     }
   }
 
@@ -83,13 +99,20 @@ export default function PartForm({ part, onSaved, onClose }) {
         <Field label="Notes">
           <Textarea rows={3} value={f.notes} onChange={set('notes')} />
         </Field>
-        <div className="flex justify-end gap-2">
-          <Button variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={busy}>
-            {busy ? 'Saving…' : 'Save'}
-          </Button>
+        <div className="flex justify-between gap-2">
+          {editing && isAdmin && (
+            <Button variant="danger" onClick={remove} disabled={busy || deleting}>
+              {deleting ? 'Deleting…' : 'Delete part'}
+            </Button>
+          )}
+          <div className="ml-auto flex gap-2">
+            <Button variant="secondary" onClick={onClose} disabled={busy || deleting}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={busy || deleting}>
+              {busy ? 'Saving…' : 'Save'}
+            </Button>
+          </div>
         </div>
       </form>
     </Modal>
